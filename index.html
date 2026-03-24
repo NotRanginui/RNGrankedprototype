@@ -7,11 +7,11 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Orbitron:wght@400;900&family=Inter:wght@300;400;700&family=Creepster&display=swap" rel="stylesheet">
     <style>
-        /* Base Cutscene Polish for Normal Ranks (Silver, Gold, Platinum) */
+        /* Base Cutscene Polish for Normal Ranks */
         @keyframes scaleIn { 0% { transform: scale(0.3); opacity: 0; filter: blur(20px); } 100% { transform: scale(1); opacity: 1; filter: blur(0px); } }
         .rank-up-active { animation: scaleIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         
-        /* Diamond & Emerald Epic Glow */
+        /* Diamond & Emerald Epic Glow & Rays */
         @keyframes epicPulse { 
             0% { filter: drop-shadow(0 0 20px rgba(255,255,255,0.4)); transform: scale(1); } 
             50% { filter: drop-shadow(0 0 80px rgba(255,255,255,0.9)); transform: scale(1.05); } 
@@ -19,12 +19,35 @@
         }
         .epic-glow { animation: scaleIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, epicPulse 2s infinite 0.8s; }
 
+        @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        #rank-up-rays {
+            display: none; position: absolute; top: 50%; left: 50%; width: 150vmax; height: 150vmax;
+            transform: translate(-50%, -50%); animation: spin 20s linear infinite; z-index: 1;
+        }
+        #rank-up-content { z-index: 2; position: relative; }
+
+        /* Streak Counter Colors */
+        .streak-0 { color: #ffffff; }
+        .streak-10 { color: #4ade80; text-shadow: 0 0 8px #4ade80; } /* Green */
+        .streak-20 { color: #3b82f6; text-shadow: 0 0 8px #3b82f6; } /* Blue */
+        .streak-30 { color: #a855f7; text-shadow: 0 0 8px #a855f7; } /* Purple */
+        .streak-40 { color: #ec4899; text-shadow: 0 0 8px #ec4899; } /* Pink */
+        .streak-50 { color: #f97316; text-shadow: 0 0 10px #f97316; } /* Orange */
+        .streak-60 { color: #ef4444; text-shadow: 0 0 12px #ef4444; } /* Red */
+        .streak-70 { color: #eab308; text-shadow: 0 0 15px #eab308; } /* Gold */
+        .streak-80 { color: #06b6d4; text-shadow: 0 0 18px #06b6d4; } /* Cyan */
+        .streak-90 { color: #991b1b; text-shadow: 0 0 20px #991b1b; } /* Dark Red */
+        .streak-100 { 
+            background: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+            background-size: 200% auto; color: transparent; -webkit-background-clip: text;
+            animation: rainbow 2s linear infinite; text-shadow: 0 0 20px rgba(255,255,255,0.4);
+        }
+        @keyframes rainbow { to { background-position: 200% center; } }
+
         /* Nightmare Cutscene Elements */
         #nightmare-sequence { position: fixed; inset: 0; background: black; z-index: 100000; display: none; align-items: center; justify-content: center; overflow: hidden; }
-        
         #nightmare-canvas { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity 2s ease-in-out; }
 
-        /* Exponential Star Growth */
         @keyframes starExponential {
             0% { transform: scale(0.5) rotate(0deg); opacity: 0; }
             10% { transform: scale(1) rotate(45deg); opacity: 1; }
@@ -33,7 +56,6 @@
             100% { transform: scale(300) rotate(1440deg); opacity: 0; }
         }
 
-        /* Exponential Entity Growth */
         @keyframes entityExponential {
             0% { transform: scale(0.1) rotate(0deg); opacity: 0; filter: blur(10px); }
             30% { transform: scale(0.6) rotate(45deg); opacity: 1; filter: blur(0px); }
@@ -41,15 +63,7 @@
             100% { transform: scale(200) rotate(1080deg); opacity: 0; }
         }
 
-        /* Upgraded Text Styles for maximum standout */
-        .cursive-friendly { 
-            font-family: 'Dancing Script', cursive; 
-            color: #ffffff; 
-            text-shadow: 0 0 10px #fff, 0 0 20px #d8b4fe, 0 0 40px #9333ea, 0 0 80px #7e22ce; 
-            text-align: center; 
-            font-weight: 900;
-            letter-spacing: 2px;
-        }
+        .cursive-friendly { font-family: 'Dancing Script', cursive; color: #ffffff; text-shadow: 0 0 10px #fff, 0 0 20px #d8b4fe, 0 0 40px #9333ea, 0 0 80px #7e22ce; text-align: center; font-weight: 900; letter-spacing: 2px; }
 
         @keyframes nightmareShake {
             0% { transform: translate(3px, 2px) rotate(0deg); }
@@ -65,11 +79,7 @@
             90%, 100% { color: #000; text-shadow: 0 0 40px #fff; background-color: #fff; box-shadow: 0 0 0 100vmax #fff; }
         }
 
-        #nightmare-final-title {
-            font-family: 'Orbitron', sans-serif; font-size: 6rem; letter-spacing: 15px; font-weight: 900;
-            z-index: 30; display: none; padding: 20px 40px; border-radius: 10px;
-            animation: nightmareShake 0.1s infinite, flashBlackWhite 2s infinite;
-        }
+        #nightmare-final-title { font-family: 'Orbitron', sans-serif; font-size: 6rem; letter-spacing: 15px; font-weight: 900; z-index: 30; display: none; padding: 20px 40px; border-radius: 10px; animation: nightmareShake 0.1s infinite, flashBlackWhite 2s infinite; }
 
         /* Standard UI Styles */
         .log-entry-win { border-right: 5px solid #22c55e !important; background: rgba(34, 197, 94, 0.05) !important; }
@@ -97,7 +107,6 @@
 
     <div id="nightmare-sequence">
         <canvas id="nightmare-canvas"></canvas>
-        
         <svg id="nightmare-star" viewBox="0 0 100 100" style="width: 80px; height: 80px; position:absolute; z-index: 10; display:none;">
             <path d="M 50 10 Q 55 45 90 65 Q 55 55 10 65 Q 45 45 50 10 Z" fill="white" filter="drop-shadow(0 0 30px white) drop-shadow(0 0 60px white)"/>
         </svg>
@@ -105,7 +114,6 @@
         <div id="nightmare-text-wrap" style="z-index: 20; display:none; flex-direction:column; align-items:center;">
             <h1 id="nightmare-t1" class="cursive-friendly" style="font-size: 5rem; display:none;">What how?</h1>
             <h1 id="nightmare-t1-5" class="cursive-friendly" style="font-size: 4rem; display:none;">the fabric tears...</h1>
-            
             <svg id="strange-entity" viewBox="0 0 200 200" style="width:120px; height:120px; display:none; margin: 30px 0;">
                 <circle cx="100" cy="100" r="80" fill="#09090b" filter="drop-shadow(0 0 40px #7e22ce)" />
                 <polygon points="100,0 130,70 200,100 130,130 100,200 70,130 0,100 70,70" fill="#2e1065" opacity="0.8"/>
@@ -114,15 +122,14 @@
                 <path d="M 60 100 Q 100 40 140 100 Q 100 160 60 100 Z" fill="#6b21a8" opacity="0.9"/>
                 <circle cx="100" cy="100" r="15" fill="#e9d5ff" filter="drop-shadow(0 0 10px white)"/>
             </svg>
-
             <h2 id="nightmare-t2" class="cursive-friendly" style="font-size: 3.5rem; opacity:0; transition: opacity 1.5s; display:none;">you have finally reached me</h2>
             <h2 id="nightmare-t3" class="cursive-friendly" style="font-size: 4.5rem; opacity:0; transition: opacity 1s; display:none; color: #fca5a5; text-shadow: 0 0 20px #ef4444;">do not blink</h2>
         </div>
-
         <h1 id="nightmare-final-title">NIGHTMARE</h1>
     </div>
 
-    <div id="rank-up-overlay" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-family: 'Orbitron'; cursor: pointer;">
+    <div id="rank-up-overlay" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-family: 'Orbitron'; cursor: pointer; overflow: hidden;">
+        <div id="rank-up-rays"></div>
         <div id="rank-up-content">
             <h2 style="color: #ef4444; letter-spacing: 12px; margin-bottom: 5px; font-size: 1.5rem; text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);">RANK PROMOTION</h2>
             <div id="rank-up-icon" style="width: 180px; height: 180px; margin: 30px auto; background-size: contain; background-repeat: no-repeat;"></div>
@@ -136,9 +143,9 @@
             <button class="nav-btn" onclick="toggleModal('acc-modal')">PROFILES</button>
             <button class="nav-btn" onclick="openHistory()">LOGS</button>
             <button class="nav-btn" onclick="openHighRolls()">BEST</button>
-            <button class="nav-btn" onclick="openLeaderboard()">TOP</button>
+            <button class="nav-btn" onclick="openLeaderboard()">TOP RP</button>
+            <button class="nav-btn" onclick="openStreakBoard()" style="color: #fbbf24; text-shadow: 0 0 5px #fbbf24;">STREAKS</button>
             <button class="nav-btn" onclick="toggleModal('settings-modal')">⚙️</button>
-            <button class="nav-btn wipe-btn" onclick="wipeData()">WIPE</button>
         </div>
 
         <div class="profile-header">
@@ -151,7 +158,7 @@
                 </div>
                 
                 <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                    <div class="streak-badge">🔥 <span id="streak-count">0</span></div>
+                    <div class="streak-badge">🔥 <span id="streak-count" class="streak-0">0</span></div>
                     <div id="winrate-display" style="font-size: 0.7rem; color: #94a3b8; margin-top: 6px; font-weight: 800; text-align: right;">
                         <span id="winrate-count">0</span>% WR <br><span style="font-size: 0.55rem; opacity: 0.5;">LIFETIME</span>
                     </div>
@@ -171,11 +178,12 @@
     </div>
 
     <div id="admin-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card admin-card-wide"><h2 class="modal-header">ADMIN TERMINAL</h2><div class="scroll-list"><div class="input-group"><label>PLAYER LUCK</label><input type="number" id="admin-luck-input" step="0.5"></div><div class="input-group"><label>SET BOT LUCK</label><input type="number" id="admin-bot-luck-input" step="0.1"></div><div class="input-group"><label>SET RP</label><input type="number" id="admin-rp-input" placeholder="New Points..."></div><div class="input-group"><label>SET STREAK</label><input type="number" id="admin-streak-input" placeholder="New Streak..."></div><div class="input-group"><label>RP MULTIPLIER</label><input type="number" id="admin-rp-bonus-input" step="0.1"></div><div class="admin-grid"><button onclick="adminAction('instaWin')" class="btn-admin win">INSTA-WIN</button><button id="god-mode-btn" onclick="adminAction('godMode')" class="btn-admin">GOD MODE: OFF</button><button id="rig-bot-btn" onclick="adminAction('rigBot')" class="btn-admin">RIG BOT: OFF</button><button onclick="adminAction('clearHistory')" class="btn-admin danger">CLEAR LOGS</button></div><button onclick="resetAdminSettings()" class="btn-admin danger" style="margin-top: 10px; width: 100%;">RESET ALL ADMIN DEFAULTS</button></div><button onclick="applyAdminChanges()" class="btn-primary">APPLY & RESET SETS</button><button onclick="toggleModal('admin-modal')" class="btn-secondary">CANCEL</button></div></div>
-    <div id="settings-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">SETTINGS</h2><div class="setting-row"><span>Round Numbers</span><label class="switch"><input type="checkbox" id="round-toggle" onchange="updateSettings()"><span class="slider"></span></label></div><button onclick="openAdminPanel()" class="btn-admin" style="background:#ef4444; margin-top:15px; width:100%;">ADMIN TERMINAL (P)</button><button onclick="toggleModal('settings-modal')" class="btn-secondary" style="margin-top: 10px;">CLOSE</button></div></div>
+    <div id="settings-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">SETTINGS</h2><div class="setting-row"><span>Round Numbers</span><label class="switch"><input type="checkbox" id="round-toggle" onchange="updateSettings()"><span class="slider"></span></label></div><button onclick="openAdminPanel()" class="btn-admin" style="background:#ef4444; margin-top:15px; width:100%;">ADMIN TERMINAL (P)</button><button onclick="wipeData()" class="btn-admin danger" style="margin-top:10px; width:100%;">WIPE ALL DATA</button><button onclick="toggleModal('settings-modal')" class="btn-secondary" style="margin-top: 10px;">CLOSE</button></div></div>
     <div id="acc-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">PROFILES</h2><div id="acc-list" class="scroll-list"></div><div class="input-group"><input type="text" id="new-acc-name" placeholder="Name..." maxlength="12"><button onclick="createNewAccount()" class="btn-primary">CREATE</button></div><button onclick="toggleModal('acc-modal')" class="btn-secondary">CLOSE</button></div></div>
     <div id="high-rolls-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">TOP 15 GLOBAL RECORDS</h2><div id="high-rolls-list" class="scroll-list"></div><button onclick="toggleModal('high-rolls-modal')" class="btn-secondary">CLOSE</button></div></div>
     <div id="history-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card history-card-wide"><h2 class="modal-header">MATCH LOGS</h2><div id="history-list" class="scroll-list"></div><button onclick="toggleModal('history-modal')" class="btn-secondary">CLOSE</button></div></div>
     <div id="leaderboard-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">LEADERBOARD</h2><div id="leaderboard-list" class="scroll-list"></div><button onclick="toggleModal('leaderboard-modal')" class="btn-secondary">CLOSE</button></div></div>
+    <div id="streak-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">TOP STREAKS</h2><div id="streak-list" class="scroll-list"></div><button onclick="toggleModal('streak-modal')" class="btn-secondary">CLOSE</button></div></div>
 
     <script src="script.js"></script>
 </body>
