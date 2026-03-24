@@ -1,6 +1,6 @@
 /**
  * CRIMSON RNG: ELITE 
- * UPDATE: NIGHTMARE CINEMATIC SEQUENCE, 3-POINT STAR & EPIC GLOWS
+ * UPDATE: SURGICAL INJECTION (STREAK LEADERBOARDS, FIXES, EPIC FX)
  */
 
 const ranks = ["Bronze", "Silver", "Gold", "Platinum", "Diamond", "Emerald", "Nightmare"];
@@ -11,8 +11,12 @@ const BOT_LUCK_CONFIG = {
 
 // --- DATA ---
 let allAccounts = JSON.parse(localStorage.getItem('crimson_accounts')) || [
-    { name: "Player 1", points: 0, streak: 0, wins: 0, losses: 0, history: [], pb: 0 }
+    { name: "Player 1", points: 0, streak: 0, bestStreak: 0, wins: 0, losses: 0, history: [], pb: 0 }
 ];
+
+// Data Migration for old accounts missing bestStreak
+allAccounts.forEach(acc => { if (typeof acc.bestStreak === 'undefined') acc.bestStreak = acc.streak || 0; });
+
 let globalHighRolls = JSON.parse(localStorage.getItem('crimson_global_highs')) || [];
 let currentAccIdx = parseInt(localStorage.getItem('crimson_current_acc')) || 0;
 let settings = JSON.parse(localStorage.getItem('crimson_settings')) || { roundNumbers: false };
@@ -57,13 +61,19 @@ function save() {
     }));
 }
 
+function getStreakClass(streak) {
+    if (streak >= 100) return 'streak-100';
+    if (streak >= 10) return `streak-${Math.floor(streak / 10) * 10}`;
+    return 'streak-0';
+}
+
 function updateUI() {
     const acc = allAccounts[currentAccIdx];
     const rIdx = Math.min(6, Math.floor(acc.points / 400));
     const rName = ranks[rIdx];
     const div = Math.floor((acc.points % 400) / 100) + 1;
 
-    // Check for Rank Up (Triggers when passing a 400 RP threshold)
+    // Check for Rank Up (Fixed triggering logic)
     if (lastRankIdx !== -1 && rIdx > lastRankIdx) {
         triggerRankPromotion(rName);
     }
@@ -77,7 +87,12 @@ function updateUI() {
     document.getElementById('rank-name').innerText = `${rName.toUpperCase()} ${div}`;
     document.getElementById('rank-points').innerText = Math.floor(acc.points).toLocaleString();
     document.getElementById('user-display-name').innerText = acc.name;
-    document.getElementById('streak-count').innerText = acc.streak;
+    
+    // Streak logic with dynamic coloring
+    const streakEl = document.getElementById('streak-count');
+    streakEl.innerText = acc.streak;
+    streakEl.className = getStreakClass(acc.streak);
+
     document.getElementById('winrate-count').innerText = Math.round(lifeWR);
     
     const bonusDisplay = document.getElementById('bonus-display');
@@ -92,7 +107,7 @@ function updateUI() {
 }
 
 // ==========================================
-// --- REBUILT CUTSCENE ENGINE ---
+// --- CUTSCENE ENGINE ---
 // ==========================================
 const wait = (ms) => new Promise(res => setTimeout(res, ms));
 
@@ -107,141 +122,94 @@ async function triggerRankPromotion(name) {
 function triggerNormalPromotion(name) {
     const overlay = document.getElementById('rank-up-overlay');
     const content = document.getElementById('rank-up-content');
+    const rays = document.getElementById('rank-up-rays');
     
     document.getElementById('rank-up-name').innerText = name.toUpperCase();
     document.getElementById('rank-up-icon').className = `rank-icon rank-${name}`;
     
-    // Apply special epic glow for high tiers, otherwise use the standard scale-in
+    // Force DOM reflow so the browser restarts the animation every time
+    content.className = '';
+    void content.offsetWidth; 
+
+    // Apply special epic glow and spin-rays for high tiers
     if (name === "Diamond" || name === "Emerald") {
         content.className = 'epic-glow';
+        rays.style.display = 'block';
+        rays.style.background = name === "Diamond" 
+            ? 'repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(185, 242, 255, 0.1) 15deg 30deg)'
+            : 'repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(80, 200, 120, 0.1) 15deg 30deg)';
     } else {
         content.className = 'rank-up-active';
+        rays.style.display = 'none';
     }
 
-    void content.offsetWidth; 
     overlay.style.display = 'flex';
 }
 
-/**
- * Renders the mathematical background dots.
- * Altered to use softer colors so it blends cleanly into the background
- * without making the bold, glowing text hard to read.
- */
 function drawGaplessDots(canvas) {
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    const baseSize = 32; 
-    const step = baseSize * 0.8; 
-    
+    const baseSize = 32; const step = baseSize * 0.8; 
     for(let y = -baseSize; y < canvas.height + baseSize; y += step) {
         for(let x = -baseSize; x < canvas.width + baseSize; x += step) {
             const scale = 0.5 + Math.random(); 
             const r = (baseSize * scale) / 2.5;
-            
             const cx = x + (Math.random() * step - step/2);
             const cy = y + (Math.random() * step - step/2);
-            
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
-            // Use subtle grays instead of stark white to blend cleanly
             ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.8)';
             ctx.fill();
         }
     }
 }
 
-/**
- * Nightmare Cinematic Sequence
- * Restructured so the background dots only appear AFTER the 3-point star 
- * has completely finished expanding. Includes new narrative text loops.
- */
 async function playNightmareCutscene(name) {
     const seq = document.getElementById('nightmare-sequence');
     const canvas = document.getElementById('nightmare-canvas');
     const star = document.getElementById('nightmare-star');
     const wrap = document.getElementById('nightmare-text-wrap');
-    
-    const t1 = document.getElementById('nightmare-t1');
-    const t1_5 = document.getElementById('nightmare-t1-5');
-    const entity = document.getElementById('strange-entity');
-    const t2 = document.getElementById('nightmare-t2');
-    const t3 = document.getElementById('nightmare-t3');
     const final = document.getElementById('nightmare-final-title');
 
-    // 0. Reset Engine State entirely
-    seq.style.display = 'flex';
-    canvas.style.opacity = '0';
-    star.style.display = 'none'; star.style.animation = 'none';
-    wrap.style.display = 'none'; 
-    t1.style.display = 'none'; t1_5.style.display = 'none';
-    entity.style.display = 'none'; entity.style.animation = 'none';
-    t2.style.opacity = '0'; t2.style.display = 'none';
-    t3.style.opacity = '0'; t3.style.display = 'none';
-    final.style.display = 'none';
-
-    // 1. Black screen pause before the event
+    seq.style.display = 'flex'; canvas.style.opacity = '0'; star.style.display = 'none'; wrap.style.display = 'none'; final.style.display = 'none';
     await wait(1000);
 
-    // 2. Star Growth (No dots yet, just the glowing 3-point star)
     star.style.display = 'block';
     star.style.animation = 'starExponential 8s cubic-bezier(0.95, 0.05, 0.8, 0.04) forwards';
     await wait(8000);
-    star.style.display = 'none'; // Erase star after growth
+    star.style.display = 'none';
 
-    // 3. Render and softly fade in the cleaner dot pattern
     drawGaplessDots(canvas);
-    canvas.style.opacity = '0.4'; // Soft blend opacity
+    canvas.style.opacity = '0.4'; 
     await wait(1500);
 
-    // 4. Narrative Sequence (Text swaps heavily styled to stand out)
     wrap.style.display = 'flex';
-    
-    t1.style.display = 'block'; // "What how?"
-    await wait(2200);
-    t1.style.display = 'none';
+    document.getElementById('nightmare-t1').style.display = 'block'; await wait(2200); document.getElementById('nightmare-t1').style.display = 'none';
+    document.getElementById('nightmare-t1-5').style.display = 'block'; await wait(2500); document.getElementById('nightmare-t1-5').style.display = 'none';
 
-    t1_5.style.display = 'block'; // "the fabric tears..."
-    await wait(2500);
-    t1_5.style.display = 'none';
-
-    // 5. Strange Entity & Main Threat
-    entity.style.display = 'block';
-    t2.style.display = 'block';
-    setTimeout(() => t2.style.opacity = '1', 500); 
-    
-    entity.style.animation = 'entityExponential 8s cubic-bezier(0.95, 0.05, 0.8, 0.04) forwards';
+    document.getElementById('strange-entity').style.display = 'block';
+    document.getElementById('nightmare-t2').style.display = 'block';
+    setTimeout(() => document.getElementById('nightmare-t2').style.opacity = '1', 500); 
+    document.getElementById('strange-entity').style.animation = 'entityExponential 8s cubic-bezier(0.95, 0.05, 0.8, 0.04) forwards';
     await wait(5000);
     
-    t2.style.opacity = '0';
-    await wait(1500);
-    t2.style.display = 'none';
+    document.getElementById('nightmare-t2').style.opacity = '0'; await wait(1500); document.getElementById('nightmare-t2').style.display = 'none';
 
-    // 6. Final Warning
-    t3.style.display = 'block'; // "do not blink"
-    setTimeout(() => t3.style.opacity = '1', 100);
-    await wait(3000);
-    t3.style.opacity = '0';
-    await wait(1000);
+    document.getElementById('nightmare-t3').style.display = 'block'; setTimeout(() => document.getElementById('nightmare-t3').style.opacity = '1', 100);
+    await wait(3000); document.getElementById('nightmare-t3').style.opacity = '0'; await wait(1000);
 
-    // 7. Final Flash Title (Shakes, 1/10th flash)
-    wrap.style.display = 'none';
-    canvas.style.opacity = '0'; // Clear dots for maximum contrast punch
-    final.style.display = 'block';
+    wrap.style.display = 'none'; canvas.style.opacity = '0'; final.style.display = 'block';
     await wait(4500);
 
-    // 8. Cleanup & Exit sequence
-    seq.style.display = 'none';
-    final.style.display = 'none';
-    triggerNormalPromotion(name); // Load standard rank up UI after cutscene
+    seq.style.display = 'none'; final.style.display = 'none';
+    triggerNormalPromotion(name); 
 }
 
 // ==========================================
-// --- CORE GAMEPLAY ENGINE (UNTOUCHED) ---
+// --- CORE GAMEPLAY ENGINE ---
 // ==========================================
 
 function queueBot() {
@@ -252,9 +220,7 @@ function queueBot() {
 }
 
 function resetRound() {
-    playerRoll = 0;
-    playerRetries = godMode ? 999 : 5;
-    isProcessing = false;
+    playerRoll = 0; playerRetries = godMode ? 999 : 5; isProcessing = false;
     document.getElementById('player-roll').innerHTML = `<span class="roll-value">?</span>`;
     document.getElementById('bot-roll').innerHTML = `<span class="roll-value">?</span>`;
     document.getElementById('player-retries').innerText = godMode ? "GOD MODE" : `RETRIES: ${playerRetries}`;
@@ -292,8 +258,7 @@ function playerStandAction() {
 
     setTimeout(() => {
         if (playerRoll > botRoll) playerSets++; else botSets++;
-        updateDots();
-        save();
+        updateDots(); save();
         if (playerSets === 3 || botSets === 3) handleMatchEnd(); else resetRound();
     }, 600);
 }
@@ -301,7 +266,15 @@ function playerStandAction() {
 function handleMatchEnd() {
     const acc = allAccounts[currentAccIdx];
     const win = playerSets === 3;
-    if (win) { acc.wins++; acc.streak++; } else { acc.losses++; acc.streak = 0; }
+    
+    if (win) { 
+        acc.wins++; 
+        acc.streak++; 
+        if (acc.streak > acc.bestStreak) acc.bestStreak = acc.streak;
+    } else { 
+        acc.losses++; 
+        acc.streak = 0; 
+    }
 
     const recent = acc.history.slice(0, 20);
     const rollingWR = recent.length === 0 ? 0.5 : recent.filter(m => m.res === "WIN").length / recent.length;
@@ -312,10 +285,7 @@ function handleMatchEnd() {
     if (acc.history.length > 50) acc.history.pop();
 
     playerSets = 0; botSets = 0;
-    queueBot(); 
-    updateUI(); 
-    updateDots(); 
-    resetRound();
+    queueBot(); updateUI(); updateDots(); resetRound();
 }
 
 function updateDots() {
@@ -347,7 +317,7 @@ function attachListeners() {
 }
 
 // ==========================================
-// --- ADMIN & MANAGEMENT (UNTOUCHED) ---
+// --- ADMIN & MANAGEMENT ---
 // ==========================================
 window.openAdminPanel = () => {
     if (prompt("PASS:") === "admin123") {
@@ -365,13 +335,16 @@ window.applyAdminChanges = () => {
     if (rpIn !== "") { allAccounts[currentAccIdx].points = parseInt(rpIn); document.getElementById('admin-rp-input').value = ""; }
 
     const streakIn = document.getElementById('admin-streak-input').value;
-    if (streakIn !== "") { allAccounts[currentAccIdx].streak = parseInt(streakIn); document.getElementById('admin-streak-input').value = ""; }
+    if (streakIn !== "") { 
+        allAccounts[currentAccIdx].streak = parseInt(streakIn); 
+        if(allAccounts[currentAccIdx].streak > allAccounts[currentAccIdx].bestStreak) allAccounts[currentAccIdx].bestStreak = allAccounts[currentAccIdx].streak;
+        document.getElementById('admin-streak-input').value = ""; 
+    }
     
     const botLuckIn = document.getElementById('admin-bot-luck-input').value;
     if (botLuckIn !== "") { botLuckOverride = parseFloat(botLuckIn); document.getElementById('admin-bot-luck-input').value = ""; }
     
-    playerSets = 0; botSets = 0;
-    queueBot(); updateUI(); updateDots(); resetRound(); toggleModal('admin-modal');
+    playerSets = 0; botSets = 0; queueBot(); updateUI(); updateDots(); resetRound(); toggleModal('admin-modal');
 };
 
 window.resetAdminSettings = () => {
@@ -418,9 +391,20 @@ window.openLeaderboard = () => {
     toggleModal('leaderboard-modal');
 };
 
+window.openStreakBoard = () => {
+    let sorted = [...allAccounts].sort((a,b) => b.bestStreak - a.bestStreak);
+    document.getElementById('streak-list').innerHTML = sorted.map((a, i) => `
+        <div style="padding:12px; background:#1e293b; margin-bottom:5px; border-radius:8px; display:flex; justify-content:space-between;">
+            <span><b style="color:#fbbf24; margin-right:8px;">#${i+1}</b> ${a.name}</span>
+            <b class="${getStreakClass(a.bestStreak)}">🔥 ${a.bestStreak} WINS</b>
+        </div>
+    `).join('');
+    toggleModal('streak-modal');
+};
+
 window.createNewAccount = () => {
     let n = document.getElementById('new-acc-name').value;
-    if(n) { allAccounts.push({ name: n, points: 0, streak: 0, wins: 0, losses: 0, history: [], pb: 0 }); document.getElementById('new-acc-name').value = ""; renderAccounts(); }
+    if(n) { allAccounts.push({ name: n, points: 0, streak: 0, bestStreak: 0, wins: 0, losses: 0, history: [], pb: 0 }); document.getElementById('new-acc-name').value = ""; renderAccounts(); }
 };
 
 window.switchAcc = (i) => { 
