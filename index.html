@@ -2,23 +2,98 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Crimson RNG | Elite Edition</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@300;400;700&family=Creepster&display=swap" rel="stylesheet">
+    <style>
+        /* Base Cutscene Polish */
+        @keyframes scaleIn { 0% { transform: scale(0.5); opacity: 0; filter: blur(10px); } 100% { transform: scale(1); opacity: 1; filter: blur(0px); } }
+        .rank-up-active { animation: scaleIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        /* Diamond & Emerald Epic Glow */
+        @keyframes epicPulse { 
+            0% { filter: drop-shadow(0 0 20px rgba(255,255,255,0.4)); transform: scale(1); } 
+            50% { filter: drop-shadow(0 0 80px rgba(255,255,255,0.9)); transform: scale(1.05); } 
+            100% { filter: drop-shadow(0 0 20px rgba(255,255,255,0.4)); transform: scale(1); } 
+        }
+        .epic-glow { animation: scaleIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, epicPulse 2s infinite 0.8s; }
+
+        /* Nightmare Cutscene Elements */
+        #nightmare-sequence { position: fixed; inset: 0; background: black; z-index: 100000; display: none; align-items: center; justify-content: center; overflow: hidden; }
+        
+        @keyframes spinGrow { 0% { transform: scale(1) rotate(0deg); } 100% { transform: scale(150) rotate(5000deg); } }
+        
+        .dots-bg { position: absolute; inset: 0; background-image: radial-gradient(#fff 2px, transparent 2px), radial-gradient(rgba(255,255,255,0.3) 1px, transparent 1px); background-size: 30px 30px, 20px 20px; background-position: 0 0, 10px 10px; opacity: 0.2; animation: dotsPulse 1.5s infinite alternate; }
+        @keyframes dotsPulse { from { opacity: 0.1; filter: blur(2px); } to { opacity: 0.4; filter: blur(0px); } }
+        
+        .nightmare-red-text { font-family: 'Creepster', cursive; color: #ef4444; font-size: 6rem; text-shadow: 0 0 20px #ef4444; letter-spacing: 10px; transition: opacity 1s ease; }
+        .nightmare-creepy-text { font-family: 'Orbitron', sans-serif; color: white; font-size: 2rem; letter-spacing: 5px; text-shadow: 0 0 15px white; transition: opacity 2s ease; opacity: 0; }
+        
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-3px, 3px) }
+            40% { transform: translate(-3px, -3px) }
+            60% { transform: translate(3px, 3px) }
+            80% { transform: translate(3px, -3px) }
+            100% { transform: translate(0) }
+        }
+        @keyframes expandFlower { to { transform: scale(150); opacity: 0; } }
+        @keyframes flashBlack { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
+
+        /* Standard UI Styles */
+        .log-entry-win { border-right: 5px solid #22c55e !important; background: rgba(34, 197, 94, 0.05) !important; }
+        .log-entry-loss { border-right: 5px solid #ef4444 !important; background: rgba(239, 68, 68, 0.05) !important; }
+        .log-text-win { color: #4ade80 !important; font-weight: 900; }
+        .log-text-loss { color: #f87171 !important; font-weight: 900; }
+        .high-roll-item { display: flex; justify-content: space-between; padding: 12px; background: #1e293b; margin-bottom: 6px; border-radius: 8px; border-left: 3px solid #fbbf24; }
+        
+        .rank-icon { width: 50px; height: 50px; background-size: contain; background-repeat: no-repeat; background-position: center; margin-right: 15px; }
+        .rank-Bronze { background-color: #cd7f32; box-shadow: 0 0 10px #cd7f32; border-radius: 50%; }
+        .rank-Silver { background-color: #c0c0c0; box-shadow: 0 0 10px #c0c0c0; border-radius: 50%; }
+        .rank-Gold { background-color: #ffd700; box-shadow: 0 0 10px #ffd700; border-radius: 50%; }
+        .rank-Platinum { background-color: #e5e4e2; box-shadow: 0 0 15px #00d4ff; border-radius: 50%; }
+        .rank-Diamond { background-color: #b9f2ff; box-shadow: 0 0 20px #b9f2ff; border-radius: 50%; }
+        .rank-Emerald { background-color: #50c878; box-shadow: 0 0 20px #50c878; border-radius: 50%; }
+        .rank-Nightmare { background-color: #700111; box-shadow: 0 0 25px #ff0000; border-radius: 50%; }
+
+        .dots { display: flex; gap: 8px; justify-content: center; margin: 10px 0; height: 12px; }
+        .dot { width: 12px; height: 12px; background: #334155; border-radius: 50%; transition: 0.3s; }
+        .p-win { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+        .b-win { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    </style>
 </head>
 <body>
 
-    <div id="rank-up-overlay" style="display:none;">
+    <div id="nightmare-sequence">
+        <svg id="nightmare-star" viewBox="0 0 100 100" style="width:10px; height:10px; position:absolute; z-index: 2; display:none;">
+            <polygon points="50,0 60,35 100,35 70,60 80,100 50,75 20,100 30,60 0,35 40,35" fill="white" clip-path="inset(0 50% 0 0)"/>
+            <polygon points="50,0 60,35 100,35 70,60 80,100 50,75 20,100 30,60 0,35 40,35" fill="black" clip-path="inset(0 0 0 50%)"/>
+        </svg>
+        <div id="nightmare-dots" class="dots-bg" style="display:none; z-index: 1;"></div>
+        <h1 id="nightmare-text-1" class="nightmare-red-text" style="display:none; z-index: 3;">WHAT HOW</h1>
+        <div style="display:flex; flex-direction:column; align-items:center; z-index: 3;">
+            <svg id="nightmare-flower" viewBox="0 0 100 100" style="width:80px; height:80px; display:none; margin-bottom: 20px;">
+                <polygon points="50,10 65,35 85,25 70,50 90,75 60,70 50,95 40,70 10,75 30,50 15,25 35,35" fill="#ef4444" opacity="0.9"/>
+                <polygon points="50,25 60,40 75,35 65,50 80,65 55,60 50,80 45,60 20,65 35,50 25,35 40,40" fill="#3b82f6" opacity="0.8"/>
+                <polygon points="50,35 55,45 65,40 55,50 65,60 55,55 50,70 45,55 35,60 45,50 35,40 45,45" fill="#22c55e" opacity="0.8"/>
+                <polygon points="50,42 53,48 60,45 53,51 58,57 52,54 50,62 48,54 42,57 47,51 40,45 47,48" fill="#fbbf24"/>
+            </svg>
+            <h2 id="nightmare-text-2" class="nightmare-creepy-text" style="display:none;">you have finally reached me</h2>
+        </div>
+        <div id="nightmare-flash" style="position:absolute; inset:0; background:black; z-index: 999; display:none;"></div>
+    </div>
+
+    <div id="rank-up-overlay" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-family: 'Orbitron'; cursor: pointer;">
         <div id="rank-up-content">
-            <h2 id="rank-up-title">RANK PROMOTION</h2>
-            <div id="rank-up-icon"></div>
-            <h1 id="rank-up-name">RANK NAME</h1>
+            <h2 style="color: #ef4444; letter-spacing: 8px; margin-bottom: 5px; font-size: 1.2rem;">RANK PROMOTION</h2>
+            <div id="rank-up-icon" style="width: 160px; height: 160px; margin: 25px auto; background-size: contain; background-repeat: no-repeat;"></div>
+            <h1 id="rank-up-name" style="font-size: 4rem; color: white; text-shadow: 0 0 30px #ef4444;">RANK NAME</h1>
+            <p style="color: #94a3b8; margin-top: 30px; letter-spacing: 2px; animation: pulse 2s infinite;">TAP TO CONTINUE</p>
         </div>
     </div>
 
     <div class="game-container">
-        
         <div class="nav-bar">
             <button class="nav-btn" onclick="toggleModal('acc-modal')">PROFILES</button>
             <button class="nav-btn" onclick="openHistory()">LOGS</button>
@@ -33,142 +108,36 @@
                 <div id="current-rank-logo" class="rank-icon"></div>
                 <div>
                     <h1 id="rank-name">BRONZE 1</h1>
-                    <p id="rp-display">
-                        <span id="user-display-name">Player</span> — 
-                        <span id="rank-points">0</span> RP
-                    </p>
-                    <p id="bonus-display" style="font-size: 0.65rem; font-weight: 800; margin-top: 2px; letter-spacing: 0.5px;"></p>
+                    <p id="rp-display"><span id="user-display-name" onclick="editName()" style="cursor:pointer; text-decoration: underline dotted #ef4444;">Player</span> — <span id="rank-points">0</span> RP</p>
+                    <p id="bonus-display" style="font-size: 0.75rem; font-weight: 900; margin-top: 4px; color: #fbbf24;"></p>
                 </div>
-                <div class="streak-badge">🔥 <span id="streak-count">0</span></div>
+                
+                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                    <div class="streak-badge">🔥 <span id="streak-count">0</span></div>
+                    <div id="winrate-display" style="font-size: 0.7rem; color: #94a3b8; margin-top: 6px; font-weight: 800; text-align: right;">
+                        <span id="winrate-count">0</span>% WR <br><span style="font-size: 0.55rem; opacity: 0.5;">LIFETIME</span>
+                    </div>
+                </div>
             </div>
-            
-            <div class="progress-container">
-                <div id="exp-progress" class="progress-bar"></div>
-            </div>
+            <div class="progress-container"><div id="exp-progress" class="progress-bar"></div></div>
         </div>
 
         <div class="arena">
-            <div class="fighter-card">
-                <span class="label">YOU</span>
-                <div id="player-roll" class="roll-box">
-                    <span class="roll-value">?</span>
-                </div>
-                <div id="player-retries" class="sub-label">RETRIES: 5</div>
-            </div>
-            
+            <div class="fighter-card"><span class="label">YOU</span><div id="player-roll" class="roll-box"><span class="roll-value">?</span></div><div id="player-retries" class="sub-label">RETRIES: 5</div></div>
             <div class="vs-divider">VS</div>
-            
-            <div class="fighter-card">
-                <span id="bot-display-name" class="label">BOT</span>
-                <div id="bot-roll" class="roll-box">
-                    <span class="roll-value">?</span>
-                </div>
-                <div class="sub-label">BEST OF 3</div>
-            </div>
+            <div class="fighter-card"><span id="bot-display-name" class="label">BOT</span><div id="bot-roll" class="roll-box"><span class="roll-value">?</span></div><div class="sub-label">BEST OF 3</div></div>
         </div>
 
-        <div class="score-display">
-            <div id="player-sets" class="dots"></div>
-            <div id="bot-sets" class="dots"></div>
-        </div>
-
-        <div class="button-row">
-            <button id="roll-btn" class="game-btn roll">ROLL</button>
-            <button id="stand-btn" class="game-btn stand">STAND</button>
-        </div>
+        <div class="score-display"><div id="player-sets" class="dots"></div><div id="bot-sets" class="dots"></div></div>
+        <div class="button-row"><button id="roll-btn" class="game-btn roll" onclick="playerRollAction()">ROLL</button><button id="stand-btn" class="game-btn stand" onclick="playerStandAction()">STAND</button></div>
     </div>
 
-    <div id="admin-modal" class="fullscreen-overlay" style="display:none;">
-        <div class="modal-card admin-card-wide">
-            <h2 class="modal-header">ADMIN OVERRIDE</h2>
-            <div class="scroll-list">
-                <div class="input-group">
-                    <label>PLAYER LUCK MULTIPLIER</label>
-                    <input type="number" id="admin-luck-input" step="0.5" value="2.0">
-                </div>
-                <div class="input-group">
-                    <label>SET BOT LUCK (NEXT ROUND ONLY)</label>
-                    <input type="number" id="admin-bot-luck-input" step="0.1" placeholder="Ex: 50.0">
-                </div>
-                <div class="input-group">
-                    <label>SET RP POINTS</label>
-                    <input type="number" id="admin-rp-input" placeholder="Enter RP value...">
-                </div>
-                <div class="input-group">
-                    <label>RP GAIN MULTIPLIER (BASE 1.0)</label>
-                    <input type="number" id="admin-rp-bonus-input" step="0.1" value="1.0">
-                </div>
-                <div class="input-group">
-                    <label>SET WIN STREAK</label>
-                    <input type="number" id="admin-streak-input" placeholder="Current: 0">
-                </div>
-                <div class="admin-grid">
-                    <button onclick="adminAction('instaWin')" class="btn-admin win">INSTA-WIN</button>
-                    <button id="god-mode-btn" onclick="adminAction('godMode')" class="btn-admin">GOD MODE: OFF</button>
-                    <button id="rig-bot-btn" onclick="adminAction('rigBot')" class="btn-admin">RIG BOT: OFF</button>
-                    <button onclick="adminAction('clearHistory')" class="btn-admin danger">CLEAR LOGS</button>
-                </div>
-            </div>
-            <button onclick="applyAdminChanges()" class="btn-primary">APPLY & CLOSE</button>
-            <button onclick="resetAdminDefaults()" class="btn-secondary" style="background: #374151; margin-top: 8px;">RESET TO DEFAULTS</button>
-            <button onclick="toggleModal('admin-modal')" class="btn-secondary">CANCEL</button>
-        </div>
-    </div>
-
-    <div id="acc-modal" class="fullscreen-overlay" style="display:none;">
-        <div class="modal-card">
-            <h2 class="modal-header">PROFILES</h2>
-            <div id="acc-list" class="scroll-list"></div>
-            <div class="input-group">
-                <input type="text" id="new-acc-name" placeholder="Name..." maxlength="12">
-                <button onclick="createNewAccount()" class="btn-primary">CREATE</button>
-            </div>
-            <button onclick="toggleModal('acc-modal')" class="btn-secondary">CLOSE</button>
-        </div>
-    </div>
-
-    <div id="high-rolls-modal" class="fullscreen-overlay" style="display:none;">
-        <div class="modal-card">
-            <h2 class="modal-header">TOP RECORDS</h2>
-            <div id="high-rolls-list" class="scroll-list"></div>
-            <button onclick="toggleModal('high-rolls-modal')" class="btn-secondary">CLOSE</button>
-        </div>
-    </div>
-
-    <div id="history-modal" class="fullscreen-overlay" style="display:none;">
-        <div class="modal-card history-card-wide">
-            <h2 class="modal-header">MATCH LOGS</h2>
-            <div id="history-list" class="scroll-list"></div>
-            <button onclick="toggleModal('history-modal')" class="btn-secondary">CLOSE</button>
-        </div>
-    </div>
-
-    <div id="leaderboard-modal" class="fullscreen-overlay" style="display:none;">
-        <div class="modal-card">
-            <h2 class="modal-header">LEADERBOARD</h2>
-            <div id="leaderboard-list" class="scroll-list"></div>
-            <button onclick="toggleModal('leaderboard-modal')" class="btn-secondary">CLOSE</button>
-        </div>
-    </div>
-
-    <div id="settings-modal" class="fullscreen-overlay" style="display:none;">
-        <div class="modal-card">
-            <h2 class="modal-header">SETTINGS</h2>
-            <div class="setting-row">
-                <span>Whole Numbers Only</span>
-                <label class="switch">
-                    <input type="checkbox" id="round-toggle" onchange="updateSettings()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <button onclick="openAdminPanel()" style="width:100%; padding:12px; margin-top:10px; background:#ef4444; color:white; border:none; border-radius:8px; font-family:'Orbitron'; font-weight:bold; cursor:pointer;">
-                ADMIN TERMINAL
-            </button>
-
-            <button onclick="toggleModal('settings-modal')" class="btn-secondary" style="margin-top: 10px;">CLOSE</button>
-        </div>
-    </div>
+    <div id="admin-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card admin-card-wide"><h2 class="modal-header">ADMIN TERMINAL</h2><div class="scroll-list"><div class="input-group"><label>PLAYER LUCK</label><input type="number" id="admin-luck-input" step="0.5"></div><div class="input-group"><label>SET BOT LUCK</label><input type="number" id="admin-bot-luck-input" step="0.1"></div><div class="input-group"><label>SET RP</label><input type="number" id="admin-rp-input" placeholder="New Points..."></div><div class="input-group"><label>SET STREAK</label><input type="number" id="admin-streak-input" placeholder="New Streak..."></div><div class="input-group"><label>RP MULTIPLIER</label><input type="number" id="admin-rp-bonus-input" step="0.1"></div><div class="admin-grid"><button onclick="adminAction('instaWin')" class="btn-admin win">INSTA-WIN</button><button id="god-mode-btn" onclick="adminAction('godMode')" class="btn-admin">GOD MODE: OFF</button><button id="rig-bot-btn" onclick="adminAction('rigBot')" class="btn-admin">RIG BOT: OFF</button><button onclick="adminAction('clearHistory')" class="btn-admin danger">CLEAR LOGS</button></div><button onclick="resetAdminSettings()" class="btn-admin danger" style="margin-top: 10px; width: 100%;">RESET ALL ADMIN DEFAULTS</button></div><button onclick="applyAdminChanges()" class="btn-primary">APPLY & RESET SETS</button><button onclick="toggleModal('admin-modal')" class="btn-secondary">CANCEL</button></div></div>
+    <div id="settings-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">SETTINGS</h2><div class="setting-row"><span>Round Numbers</span><label class="switch"><input type="checkbox" id="round-toggle" onchange="updateSettings()"><span class="slider"></span></label></div><button onclick="openAdminPanel()" class="btn-admin" style="background:#ef4444; margin-top:15px; width:100%;">ADMIN TERMINAL (P)</button><button onclick="toggleModal('settings-modal')" class="btn-secondary" style="margin-top: 10px;">CLOSE</button></div></div>
+    <div id="acc-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">PROFILES</h2><div id="acc-list" class="scroll-list"></div><div class="input-group"><input type="text" id="new-acc-name" placeholder="Name..." maxlength="12"><button onclick="createNewAccount()" class="btn-primary">CREATE</button></div><button onclick="toggleModal('acc-modal')" class="btn-secondary">CLOSE</button></div></div>
+    <div id="high-rolls-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">TOP 15 GLOBAL RECORDS</h2><div id="high-rolls-list" class="scroll-list"></div><button onclick="toggleModal('high-rolls-modal')" class="btn-secondary">CLOSE</button></div></div>
+    <div id="history-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card history-card-wide"><h2 class="modal-header">MATCH LOGS</h2><div id="history-list" class="scroll-list"></div><button onclick="toggleModal('history-modal')" class="btn-secondary">CLOSE</button></div></div>
+    <div id="leaderboard-modal" class="fullscreen-overlay" style="display:none;"><div class="modal-card"><h2 class="modal-header">LEADERBOARD</h2><div id="leaderboard-list" class="scroll-list"></div><button onclick="toggleModal('leaderboard-modal')" class="btn-secondary">CLOSE</button></div></div>
 
     <script src="script.js"></script>
 </body>
